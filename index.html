@@ -136,6 +136,7 @@ td.amt.deb{color:var(--red)}td.amt.cre{color:var(--green)}
 <div class="sidebar-logo"><div class="icon">€</div><span>Lasten</span></div>
 <div class="nav-section">Overzicht</div>
 <div class="nav-item active" onclick="showPage('dashboard',this)">Dashboard</div>
+<div class="nav-item" onclick="showPage('vastelasten',this)">Vaste Lasten</div>
 <div class="nav-item" onclick="showPage('transactions',this)">Transacties <span class="badge hidden" id="uncatBadge">0</span></div>
 <div class="nav-item" onclick="showPage('freedom',this)">Cashflow</div>
 <div class="nav-item" onclick="showPage('vermogen',this)">Vermogen</div>
@@ -168,6 +169,22 @@ td.amt.deb{color:var(--red)}td.amt.cre{color:var(--green)}
 <div class="card"><div class="card-header"><span class="card-title">Grootste uitgaven</span></div><div id="topE"></div></div>
 </div></div>
 
+<!-- VASTE LASTEN -->
+<div id="page-vastelasten" class="hidden">
+<div class="ph"><h1>Vaste Lasten</h1><div class="actions">
+<div class="st"><button class="sb active" onclick="setScope('all')">Alles</button><button class="sb" onclick="setScope('prive')">Privé</button><button class="sb" onclick="setScope('zakelijk')">Zakelijk</button></div>
+</div></div>
+<div class="stats-row">
+<div class="stat-card"><div class="stat-label">Vaste kosten /mnd</div><div class="stat-value neg" id="vlKosten">€ 0</div><div class="stat-sub" id="vlKostenN">0 posten</div></div>
+<div class="stat-card"><div class="stat-label">Vaste inkomsten /mnd</div><div class="stat-value pos" id="vlInk">€ 0</div><div class="stat-sub" id="vlInkN">0 posten</div></div>
+<div class="stat-card"><div class="stat-label">Netto vaste lasten</div><div class="stat-value" id="vlNetto">€ 0</div><div class="stat-sub">per maand</div></div>
+</div>
+<div class="card"><div class="card-header"><span class="card-title">Terugkerende kosten</span><span style="font-size:12px;color:var(--text-muted)">Automatisch gedetecteerd uit 2+ maanden data</span></div>
+<div style="overflow-x:auto"><table><thead><tr><th>Tegenpartij</th><th>Rekening</th><th style="text-align:center">Maanden</th><th style="text-align:right">Gem. /mnd</th></tr></thead><tbody id="vlDebTable"></tbody></table></div></div>
+<div class="card"><div class="card-header"><span class="card-title">Terugkerende inkomsten</span></div>
+<div style="overflow-x:auto"><table><thead><tr><th>Tegenpartij</th><th>Rekening</th><th style="text-align:center">Maanden</th><th style="text-align:right">Gem. /mnd</th></tr></thead><tbody id="vlCreTable"></tbody></table></div></div>
+</div>
+
 <!-- TRANSACTIONS -->
 <div id="page-transactions" class="hidden">
 <div class="ph"><h1>Transacties</h1><div class="actions">
@@ -186,48 +203,28 @@ td.amt.deb{color:var(--red)}td.amt.cre{color:var(--green)}
 <div class="ph"><h1>Cashflow</h1></div>
 
 <div class="stats-row">
-<div class="stat-card"><div class="stat-label">Privé nodig (netto/mnd)</div><div class="stat-value neg" id="fNeed">€ 0</div><div class="stat-sub">uit bankdata + buffer</div></div>
-<div class="stat-card"><div class="stat-label">Passief inkomen (netto/mnd)</div><div class="stat-value pos" id="fHave">€ 0</div><div class="stat-sub">na belasting</div></div>
-<div class="stat-card"><div class="stat-label">Cashflow</div><div class="stat-value" id="fGap">€ 0</div><div class="stat-sub" id="fGapS">per maand</div></div>
-<div class="stat-card"><div class="stat-label">Benodigd bruto BV</div><div class="stat-value" id="fBr" style="color:var(--accent)">€ 0</div><div class="stat-sub">excl. BTW per maand</div></div>
+<div class="stat-card"><div class="stat-label">Privé kosten /mnd</div><div class="stat-value neg" id="fPrive">€ 0</div><div class="stat-sub" id="fPriveN">0 posten</div></div>
+<div class="stat-card"><div class="stat-label">Zakelijke kosten /mnd</div><div class="stat-value neg" id="fZak">€ 0</div><div class="stat-sub" id="fZakN">0 posten</div></div>
+<div class="stat-card"><div class="stat-label">Vaste inkomsten /mnd</div><div class="stat-value pos" id="fHave">€ 0</div><div class="stat-sub" id="fHaveN">0 posten</div></div>
+<div class="stat-card"><div class="stat-label">Cashflow /mnd</div><div class="stat-value" id="fGap">€ 0</div><div class="stat-sub" id="fGapS">per maand</div></div>
 </div>
 
-<!-- Net worth summary on freedom page -->
-<div class="card" style="margin-bottom:24px">
-<div class="card-header"><span class="card-title">Eigen vermogen</span><button class="btn btn-sm" onclick="showPage('vermogen',null);document.querySelectorAll('.nav-item')[3].classList.add('active')">Beheren →</button></div>
+<div class="card" style="background:var(--surface2)">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
+<span style="font-size:15px;font-weight:600">BV moet minimaal binnenbrengen</span>
+<span style="font-family:'DM Mono';font-size:24px;font-weight:700;color:var(--accent)" id="fNodig">€ 0 /mnd</span>
+</div>
+<div style="font-size:12px;color:var(--text-muted);margin-top:4px">Privé kosten + zakelijke kosten − vaste inkomsten</div>
+</div>
+
+<!-- Vermogen samenvatting -->
+<div class="card" style="margin-top:16px">
+<div class="card-header"><span class="card-title">Vermogen</span><button class="btn btn-sm" onclick="showPage('vermogen',null);document.querySelectorAll('.nav-item')[4].classList.add('active')">Beheren →</button></div>
 <div class="g2" id="fVermogen">
 <div style="text-align:center;padding:12px"><div class="stat-label">Netto vermogen</div><div class="stat-value pos" id="fTotV">€ 0</div></div>
 <div id="fVCats" style="display:flex;flex-direction:column;gap:4px"></div>
 </div></div>
-
-<div class="g2">
-<div>
-<div class="card"><div class="card-title" style="margin-bottom:16px">💶 Privé nodig (per maand)</div>
-<div class="ci"><label>Maandelijkse privé-kosten</label><div class="iw"><span class="pf">€</span><input id="cPK" value="0" oninput="calcF()"></div><div class="hn" id="cPKh">Wordt automatisch gevuld uit transacties</div></div>
-<div class="ci"><label>Buffer / sparen</label><div class="iw"><span class="pf">€</span><input id="cBuf" value="500" oninput="calcF()"></div></div>
-<div class="ci"><label>Extra (contant)</label><div class="iw"><span class="pf">€</span><input id="cExt" value="0" oninput="calcF()"></div></div>
-<div class="bd"><div class="bln tot"><span>Netto nodig</span><span class="v acc" id="cNN">€ 0</span></div></div></div>
-<div class="card"><div class="card-title" style="margin-bottom:16px">🏢 BV-kosten (per maand)</div>
-<div class="ci"><label>Vaste BV-kosten</label><div class="iw"><span class="pf">€</span><input id="cZK" value="500" oninput="calcF()"></div></div>
-<div class="ci"><label>Uit transacties</label><div class="iw"><span class="pf">€</span><input id="cZKa" value="0" readonly></div></div></div>
-<div class="card"><div class="card-title" style="margin-bottom:16px">💰 Passief inkomen BV (bruto/mnd)</div>
-<div class="ci"><label>Huurinkomsten</label><div class="iw"><span class="pf">€</span><input id="cHuur" value="0" oninput="calcF()"></div></div>
-<div class="ci"><label>Overig passief</label><div class="iw"><span class="pf">€</span><input id="cPas" value="0" oninput="calcF()"></div></div>
-<div class="ci"><label>Uit zakelijke rekeningen</label><div class="iw"><span class="pf">€</span><input id="cInA" value="0" readonly></div></div></div>
 </div>
-<div>
-<div class="card"><div class="card-title" style="margin-bottom:16px">📊 Passief → netto</div><div class="bd" id="cDown" style="border:none;padding-top:0"></div></div>
-<div class="card"><div class="card-title" style="margin-bottom:16px">📊 Benodigd → bruto</div><div class="bd" id="cUp" style="border:none;padding-top:0"></div></div>
-<div class="card"><div class="card-title" style="margin-bottom:12px">⚙️ Fiscale parameters</div>
-<div class="g2" style="gap:8px">
-<div class="ci"><label>VPB ≤€200k</label><div class="iw"><span class="pf">%</span><input id="pV1" value="19" oninput="calcF()"></div></div>
-<div class="ci"><label>VPB >€200k</label><div class="iw"><span class="pf">%</span><input id="pV2" value="25.8" oninput="calcF()"></div></div>
-<div class="ci"><label>AB-heffing</label><div class="iw"><span class="pf">%</span><input id="pAB" value="24.5" oninput="calcF()"></div></div>
-<div class="ci"><label>DGA-salaris (jaar)</label><div class="iw"><span class="pf">€</span><input id="pDGA" value="56000" oninput="calcF()"></div></div>
-<div class="ci"><label>Effectief IB over DGA</label><div class="iw"><span class="pf">%</span><input id="pIB" value="37" oninput="calcF()"></div></div>
-</div>
-<div class="ib">💡 DGA-salaris is het verplichte minimum. De rest kun je als dividend uitkeren. Raadpleeg je boekhouder voor exacte cijfers.</div>
-</div></div></div></div>
 
 <!-- VERMOGEN -->
 <div id="page-vermogen" class="hidden">
@@ -546,7 +543,7 @@ function fS(txs){if(scope==='all')return txs;return txs.filter(t=>{const a=accou
 function showPage(p,el){document.querySelectorAll('.main>div[id^="page-"]').forEach(x=>x.classList.add('hidden'));document.getElementById('page-'+p).classList.remove('hidden');document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));if(el)el.classList.add('active');renderAll()}
 function pm(){curM--;if(curM<0){curM=11;curY--}renderAll()}
 function nm(){curM++;if(curM>11){curM=0;curY++}renderAll()}
-function renderAll(){const l=`${MN[curM]} ${curY}`;document.querySelectorAll('.ml').forEach(e=>e.textContent=l);renderDash();renderTx();renderRules();renderCats();renderAccs();renderVermogen();updateCnts();calcF()}
+function renderAll(){const l=`${MN[curM]} ${curY}`;document.querySelectorAll('.ml').forEach(e=>e.textContent=l);renderDash();renderVasteLasten();renderTx();renderRules();renderCats();renderAccs();renderVermogen();updateCnts();calcF()}
 function gM(m,y){if(m===undefined)m=curM;if(y===undefined)y=curY;return transactions.filter(t=>{const d=new Date(t.date);return d.getMonth()===m&&d.getFullYear()===y})}
 function fmt(a){return'\u20AC '+Math.abs(a).toLocaleString('nl-NL',{minimumFractionDigits:0,maximumFractionDigits:0})}
 function fmt2(a){return'\u20AC '+Math.abs(a).toLocaleString('nl-NL',{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -554,7 +551,7 @@ function fmtD(d){return new Date(d).toLocaleDateString('nl-NL',{day:'2-digit',mo
 
 // === DASHBOARD ===
 function renderDash(){
-  const tx=fS(gM()),deb=tx.filter(t=>t.is_debit&&t.category_id!=='intern'),cre=tx.filter(t=>!t.is_debit&&t.category_id!=='intern'),unc=tx.filter(t=>!t.category_id);
+  const tx=fS(gM()),deb=tx.filter(t=>t.is_debit&&t.category_id!=='intern'&&t.category_id!=='kapitaal'),cre=tx.filter(t=>!t.is_debit&&t.category_id!=='intern'&&t.category_id!=='kapitaal'),unc=tx.filter(t=>!t.category_id);
   const out=deb.reduce((s,t)=>s+Math.abs(t.amount),0),inc=cre.reduce((s,t)=>s+Math.abs(t.amount),0),net=inc-out;
   document.getElementById('sU').textContent=fmt2(out);document.getElementById('sUN').textContent=deb.length+' transacties';
   document.getElementById('sI').textContent=fmt2(inc);document.getElementById('sIN').textContent=cre.length+' transacties';
@@ -568,9 +565,63 @@ function renderDash(){
   document.getElementById('topE').innerHTML=top.length?top.map(t=>{const c=categories.find(x=>x.id===t.category_id);return`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--surface2)"><span>${c?.icon||'❓'}</span><span class="cp" style="flex:1">${t.counterparty}</span><span class="amt deb" style="font-family:'DM Mono';font-weight:600">${fmt(t.amount)}</span></div>`}).join(''):'';
   // Chart
   const el=document.getElementById('mChart'),ms=[];
-  for(let i=11;i>=0;i--){let m=curM-i,y=curY;while(m<0){m+=12;y--}const t=fS(gM(m,y)).filter(t=>t.is_debit&&t.category_id!=='intern').reduce((s,t)=>s+Math.abs(t.amount),0);ms.push({m,y,t,l:MN[m].substring(0,3)})}
+  for(let i=11;i>=0;i--){let m=curM-i,y=curY;while(m<0){m+=12;y--}const t=fS(gM(m,y)).filter(t=>t.is_debit&&t.category_id!=='intern'&&t.category_id!=='kapitaal').reduce((s,t)=>s+Math.abs(t.amount),0);ms.push({m,y,t,l:MN[m].substring(0,3)})}
   const cmx=Math.max(...ms.map(x=>x.t),1);
   el.innerHTML=ms.map(x=>{const h=(x.t/cmx*100).toFixed(0),cur=x.m===curM&&x.y===curY;return`<div class="bg"><div class="br" style="height:${Math.max(h,3)}%;background:${cur?'var(--accent)':'var(--surface3)'}"></div><div class="bl-l" style="${cur?'color:var(--accent);font-weight:700':''}">${x.l}</div></div>`}).join('');
+}
+
+// === VASTE LASTEN DETECTIE ===
+function detectRecurring(){
+  const excl=['intern','kapitaal'];
+  const txs=fS(transactions).filter(t=>!excl.includes(t.category_id));
+  const groups={};
+  for(const tx of txs){
+    const key=(tx.counterparty||'').toLowerCase().trim();
+    if(!key||key==='onbekend')continue;
+    if(!groups[key])groups[key]={name:tx.counterparty,months:{},isDebit:tx.is_debit,accountId:tx.account_id};
+    const mk=tx.date.substring(0,7);
+    if(!groups[key].months[mk])groups[key].months[mk]=0;
+    groups[key].months[mk]+=Math.abs(Number(tx.amount));
+  }
+  const recurring=[];
+  for(const[key,d]of Object.entries(groups)){
+    const mc=Object.keys(d.months).length;
+    if(mc>=2){
+      const avg=Object.values(d.months).reduce((a,b)=>a+b,0)/mc;
+      if(avg>=1)recurring.push({name:d.name,monthCount:mc,avg,isDebit:d.isDebit,accountId:d.accountId});
+    }
+  }
+  recurring.sort((a,b)=>b.avg-a.avg);
+  return recurring;
+}
+
+function renderVasteLasten(){
+  const rec=detectRecurring();
+  const kosten=rec.filter(r=>r.isDebit);
+  const inkomsten=rec.filter(r=>!r.isDebit);
+  const totK=kosten.reduce((s,r)=>s+r.avg,0);
+  const totI=inkomsten.reduce((s,r)=>s+r.avg,0);
+
+  document.getElementById('vlKosten').textContent=fmt(totK);
+  document.getElementById('vlKostenN').textContent=kosten.length+' posten';
+  document.getElementById('vlInk').textContent=fmt(totI);
+  document.getElementById('vlInkN').textContent=inkomsten.length+' posten';
+  const netto=totI-totK;
+  const ne=document.getElementById('vlNetto');
+  ne.textContent=(netto>=0?'+ ':'')+fmt(Math.abs(netto));
+  ne.className='stat-value '+(netto>=0?'pos':'neg');
+
+  function renderTable(items){
+    return items.map(r=>{
+      const a=accounts.find(x=>x.id===r.accountId);
+      return`<tr><td style="font-weight:500">${r.name}</td><td><span class="ab ${a?.type||'prive'}"><span class="dot" style="background:${a?.color||'#888'}"></span>${a?.name||'?'}</span></td><td style="text-align:center;color:var(--text-muted)">${r.monthCount}×</td><td class="amt ${r.isDebit?'deb':'cre'}" style="font-weight:600">${fmt(r.avg)}</td></tr>`;
+    }).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px">Geen data — upload meer CSV\'s</td></tr>';
+  }
+
+  document.getElementById('vlDebTable').innerHTML=renderTable(kosten)+
+    (kosten.length?`<tr style="font-weight:700;border-top:2px solid var(--border)"><td colspan="3">Totaal vaste kosten</td><td class="amt deb">${fmt(totK)}</td></tr>`:'');
+  document.getElementById('vlCreTable').innerHTML=renderTable(inkomsten)+
+    (inkomsten.length?`<tr style="font-weight:700;border-top:2px solid var(--border)"><td colspan="3">Totaal vaste inkomsten</td><td class="amt cre">${fmt(totI)}</td></tr>`:'');
 }
 
 // === TRANSACTIONS ===
@@ -822,66 +873,30 @@ async function saveAssetCat(){
   closeModal();await loadAll();showToast('Categorie toegevoegd','ok');
 }
 
-// === FREEDOM ===
-function pv(id){return parseFloat((document.getElementById(id)?.value||'0').replace(',','.'))||0}
-function avgOut(type){const ms=[];for(let i=0;i<12;i++){let m=curM-i,y=curY;while(m<0){m+=12;y--}
-  const tx=transactions.filter(t=>{const d=new Date(t.date);const a=accounts.find(x=>x.id===t.account_id);return d.getMonth()===m&&d.getFullYear()===y&&t.is_debit&&t.category_id!=='intern'&&(type==='prive'?a?.type!=='zakelijk':a?.type==='zakelijk')});
-  if(tx.length)ms.push(tx.reduce((s,t)=>s+Math.abs(t.amount),0));if(ms.length>=3)break}return ms.length?ms.reduce((a,b)=>a+b,0)/ms.length:0}
-function avgIn(){const ms=[];for(let i=0;i<12;i++){let m=curM-i,y=curY;while(m<0){m+=12;y--}
-  const tx=transactions.filter(t=>{const d=new Date(t.date);const a=accounts.find(x=>x.id===t.account_id);return d.getMonth()===m&&d.getFullYear()===y&&!t.is_debit&&t.category_id!=='intern'&&a?.type==='zakelijk'});
-  if(tx.length)ms.push(tx.reduce((s,t)=>s+Math.abs(t.amount),0));if(ms.length>=3)break}return ms.length?ms.reduce((a,b)=>a+b,0)/ms.length:0}
-
+// === CASHFLOW ===
 function calcF(){
-  const ap=avgOut('prive'),az=avgOut('zakelijk'),ai=avgIn();
-  if(ap>0&&document.getElementById('cPK').value==='0'){document.getElementById('cPK').value=Math.round(ap);document.getElementById('cPKh').textContent='Gemiddelde uit privé-rekeningen'}
-  if(az>0)document.getElementById('cZKa').value=Math.round(az);
-  if(ai>0)document.getElementById('cInA').value=Math.round(ai);
+  const rec=detectRecurring();
+  const priveK=rec.filter(r=>r.isDebit&&!isZakAccount(r.accountId));
+  const zakK=rec.filter(r=>r.isDebit&&isZakAccount(r.accountId));
+  const inkomsten=rec.filter(r=>!r.isDebit);
+  const totPrive=priveK.reduce((s,r)=>s+r.avg,0);
+  const totZak=zakK.reduce((s,r)=>s+r.avg,0);
+  const totInk=inkomsten.reduce((s,r)=>s+r.avg,0);
+  const cashflow=totInk-totPrive-totZak;
+  const nodig=Math.max(totPrive+totZak-totInk,0);
 
-  const pk=pv('cPK'),buf=pv('cBuf'),ext=pv('cExt'),nnM=pk+buf+ext,nnJ=nnM*12;
-  document.getElementById('cNN').textContent=fmt(nnM);
-  const zk=(pv('cZK')+pv('cZKa'))*12;
-  const bpM=pv('cHuur')+pv('cPas')+pv('cInA'),bpJ=bpM*12;
-  const v1=pv('pV1')/100,v2=pv('pV2')/100,ab=pv('pAB')/100,dga=pv('pDGA'),ib=pv('pIB')/100;
-
-  // Passief -> netto
-  const wp=Math.max(bpJ-zk,0),vpbP=wp<=200000?wp*v1:200000*v1+(wp-200000)*v2;
-  const nwP=wp-vpbP,dgaN=dga*(1-ib),vdP=Math.max(nwP-dga,0),abP=vdP*ab,divP=vdP-abP;
-  const totN=dgaN+divP,nPM=totN/12;
-
-  document.getElementById('cDown').innerHTML=`
-    <div class="bln"><span>Bruto passief</span><span class="v">${fmt(bpJ)}/jr</span></div>
-    <div class="bln ind"><span>BV-kosten</span><span class="v neg">-${fmt(zk)}</span></div>
-    <div class="bln" style="font-weight:600"><span>Winst BV</span><span class="v">${fmt(wp)}</span></div>
-    <div class="bln ind"><span>VPB</span><span class="v neg">-${fmt(vpbP)}</span></div>
-    <div class="bln"><span>Netto winst</span><span class="v">${fmt(nwP)}</span></div>
-    <div class="bln ind"><span>DGA-salaris bruto</span><span class="v neg">-${fmt(dga)}</span></div>
-    <div class="bln ind"><span>→ DGA netto</span><span class="v pos">${fmt(dgaN)}</span></div>
-    <div class="bln ind"><span>Dividend</span><span class="v">${fmt(vdP)}</span></div>
-    <div class="bln ind"><span>AB-heffing</span><span class="v neg">-${fmt(abP)}</span></div>
-    <div class="bln ind"><span>→ Dividend netto</span><span class="v pos">${fmt(divP)}</span></div>
-    <div class="bln tot"><span>Netto passief /mnd</span><span class="v ${nPM>=nnM?'pos':'acc'}">${fmt(nPM)}</span></div>`;
-
-  // Benodigd -> bruto
-  let lo=0,hi=2e6;for(let i=0;i<60;i++){const mid=(lo+hi)/2;if(calcNet(mid,zk,v1,v2,ab,dga,ib)<nnJ)lo=mid;else hi=mid}
-  const brJ=(lo+hi)/2,brM=brJ/12;
-  const wN=Math.max(brJ-zk,0),vpbN=wN<=200000?wN*v1:200000*v1+(wN-200000)*v2;
-  document.getElementById('cUp').innerHTML=`
-    <div class="bln"><span>Netto nodig</span><span class="v">${fmt(nnJ)}/jr</span></div>
-    <div class="bln"><span>→ Bruto BV nodig</span><span class="v acc">${fmt(brJ)}/jr</span></div>
-    <div class="bln ind"><span>Zakelijke kosten</span><span class="v">${fmt(zk)}</span></div>
-    <div class="bln ind"><span>VPB</span><span class="v">${fmt(vpbN)}</span></div>
-    <div class="bln tot"><span>Per maand bruto</span><span class="v acc">${fmt(brM)}</span></div>`;
-
-  // Stats
-  const gap=nPM-nnM;
-  document.getElementById('fNeed').textContent=fmt(nnM);
-  document.getElementById('fHave').textContent=fmt(nPM);
-  document.getElementById('fGap').textContent=(gap>=0?'+ ':'')+fmt(Math.abs(gap));
-  document.getElementById('fGap').className='stat-value '+(gap>=0?'pos':'neg');
-  document.getElementById('fGapS').textContent=gap>=0?'positief /mnd':'negatief /mnd';
-  document.getElementById('fBr').textContent=fmt(brM);
+  document.getElementById('fPrive').textContent=fmt(totPrive);
+  document.getElementById('fPriveN').textContent=priveK.length+' posten';
+  document.getElementById('fZak').textContent=fmt(totZak);
+  document.getElementById('fZakN').textContent=zakK.length+' posten';
+  document.getElementById('fHave').textContent=fmt(totInk);
+  document.getElementById('fHaveN').textContent=inkomsten.length+' posten';
+  document.getElementById('fGap').textContent=(cashflow>=0?'+ ':'')+fmt(Math.abs(cashflow));
+  document.getElementById('fGap').className='stat-value '+(cashflow>=0?'pos':'neg');
+  document.getElementById('fGapS').textContent=cashflow>=0?'positief /mnd':'negatief /mnd';
+  document.getElementById('fNodig').textContent=fmt(nodig)+' /mnd';
 }
-function calcNet(br,zk,v1,v2,ab,dga,ib){const w=Math.max(br-zk,0),vpb=w<=200000?w*v1:200000*v1+(w-200000)*v2,nw=w-vpb;return dga*(1-ib)+Math.max(nw-dga,0)*(1-ab)}
+function isZakAccount(accId){const a=accounts.find(x=>x.id===accId);return a?.type==='zakelijk'}
 
 // === UTILS ===
 function updateCnts(){document.getElementById('txCnt').textContent=transactions.length;const u=transactions.filter(t=>!t.category_id).length;const b=document.getElementById('uncatBadge');if(u>0){b.textContent=u;b.classList.remove('hidden')}else b.classList.add('hidden')}
